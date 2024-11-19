@@ -1,5 +1,5 @@
 import pytest
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from openergo.executor import root_node, traverse_datastructures
 
 
@@ -15,7 +15,7 @@ class TestDecorators:
 
     def test_traverse_datastructures_with_dict(self):
         """Test `traverse_datastructures` with a dictionary."""
-        @traverse_datastructures
+        @traverse_datastructures()
         def test_func(value: Any) -> Any:
             return uppercase(value)
 
@@ -25,7 +25,7 @@ class TestDecorators:
 
     def test_traverse_datastructures_with_list(self):
         """Test `traverse_datastructures` with a list."""
-        @traverse_datastructures
+        @traverse_datastructures()
         def test_func(value: Any) -> Any:
             return uppercase(value)
 
@@ -35,7 +35,7 @@ class TestDecorators:
 
     def test_traverse_datastructures_with_tuple(self):
         """Test `traverse_datastructures` with a tuple."""
-        @traverse_datastructures
+        @traverse_datastructures()
         def test_func(value: Any) -> Any:
             return uppercase(value)
 
@@ -45,7 +45,7 @@ class TestDecorators:
 
     def test_traverse_datastructures_with_primitive(self):
         """Test `traverse_datastructures` with a primitive."""
-        @traverse_datastructures
+        @traverse_datastructures()
         def test_func(value: Any) -> Any:
             return uppercase(value)
 
@@ -55,9 +55,9 @@ class TestDecorators:
 
     def test_root_node_with_dict(self):
         """Test `root_node` decorator with a dictionary."""
-        @root_node
+        @root_node()
         def test_func(data: Dict[str, Any]) -> Dict[str, Any]:
-            return {"__root__": {"NESTED": data["__root__"]["value"]}}
+            return {"NESTED": data["__root__"]["value"]}
 
         input_data = {"value": "test"}
         expected = {"NESTED": "test"}
@@ -65,9 +65,9 @@ class TestDecorators:
 
     def test_root_node_with_list(self):
         """Test `root_node` decorator with a list."""
-        @root_node
+        @root_node()
         def test_func(data: Dict[str, Any]) -> Dict[str, Any]:
-            return {"__root__": [item.upper() for item in data["__root__"]]}
+            return [item.upper() for item in data["__root__"]]
 
         input_data = ["value1", "value2"]
         expected = ["VALUE1", "VALUE2"]
@@ -75,9 +75,9 @@ class TestDecorators:
 
     def test_root_node_with_primitive(self):
         """Test `root_node` decorator with a primitive."""
-        @root_node
+        @root_node()
         def test_func(data: Dict[str, Any]) -> Dict[str, Any]:
-            return {"__root__": data["__root__"].upper()}
+            return data["__root__"].upper()
 
         input_data = "test"
         expected = "TEST"
@@ -85,8 +85,8 @@ class TestDecorators:
 
     def test_combined_decorators(self):
         """Test `root_node` and `traverse_datastructures` together."""
-        @root_node
-        @traverse_datastructures
+        @root_node(param_index=0)
+        @traverse_datastructures(ignore=["__root__"])
         def test_func(value: Any) -> Any:
             return uppercase(value)
 

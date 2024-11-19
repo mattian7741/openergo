@@ -1,6 +1,6 @@
 import importlib
 from types import FunctionType
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Union
 
 from openergo.executor import Executor
 

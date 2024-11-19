@@ -142,8 +142,8 @@ def register_commands(command_config: Dict[str, Dict[str, Any]]) -> None:
             @wraps(handler)
             def cli_function(*args: Any, **kwargs: Any) -> Any:
                 wrapped_handler = with_quality_check(handler)
-                # return wrapped_handler(*args, **kwargs)
-                return handler(*args, **kwargs)
+                return wrapped_handler(*args, **kwargs)
+                # return handler(*args, **kwargs)
 
             return cli_function
 
