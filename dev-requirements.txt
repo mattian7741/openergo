@@ -1,12 +1,1 @@
--e .
-autopep8
-black
-isort
-pylint
-flake8
-pycodestyle
-mypy
-xenon
-pyyaml
-coverage
-types-PyYAML
+pytest

@@ -1,17 +1,19 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
-    name="openergo",
-    version="0.1",
-    packages=find_packages(),
-    include_package_data=True,
+    name='openergo',
+    version='0.1',
+    packages=['openergo'],
     install_requires=[
         "click",
-        "kombu"
+        "graphviz",
+        "pydash",
+        "dill",
+        "cryptography"
     ],
     entry_points={
         "console_scripts": [
-            "openergo = openergo.cli:main",
+            "openergo = openergo.openergo_cli:main",
         ],
-    },
+    },    
 )

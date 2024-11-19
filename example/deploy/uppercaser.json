@@ -1,0 +1,26 @@
+{
+  "version": "0.0.1",
+  "name": "uppercaser",
+  "shell": {
+    "language": "python",
+    "procedure": "uppercase.__main__.make_upper"
+  },
+  "input": {
+    "namespaces": ["openergo"],
+    "keys": [
+        "text"
+    ],
+    "bindings": [
+        "{message.text}"
+    ]
+  },
+  "output": {
+    "namespaces": ["local"],
+    "keys": [
+        "uppered.?"
+    ],
+    "bindings": [
+        "{message.text}"
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "version": "0.0.1",
+  "name": "camelcaser",
+  "shell": {
+    "language": "python",
+    "procedure": "camelcase.__main__.camel_case"
+  },
+  "input": {
+    "namespaces": ["openergo"],
+    "keys": [
+        "text"
+    ],
+    "bindings": {
+        "string": "test {name} test"
+    }
+  },
+  "output": {
+    "namespaces": ["local"],
+    "keys": [
+        "cameled.?"
+    ],
+    "bindings": [
+        "{message.text}"
+    ]
+  }
+}

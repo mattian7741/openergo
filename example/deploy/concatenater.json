@@ -1,0 +1,27 @@
+{
+  "version": "0.0.1",
+  "name": "concatenator",
+  "shell": {
+    "language": "python",
+    "procedure": "concatenate.__main__.join"
+  },
+  "input": {
+    "namespaces": ["openergo"],
+    "keys": [
+        "quoted", "snaked", "cameled", "uppered", "reversed"
+    ],
+    "bindings": [
+        "{message.text}",
+        {"delimiter": "\n"}
+    ]
+  },
+  "output": {
+    "namespaces": ["local"],
+    "keys": [
+        "concatenated.?"
+    ],
+    "bindings": [
+        "{message.text}"
+    ]
+  }
+}

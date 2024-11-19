@@ -1,0 +1,26 @@
+{
+  "version": "0.0.1",
+  "name": "reverser",
+  "shell": {
+    "language": "python",
+    "procedure": "reverse.__main__.reverse"
+  },
+  "input": {
+    "namespaces": ["openergo"],
+    "keys": [
+        "text"
+    ],
+    "bindings": [
+        "{message.text}"
+    ]
+  },
+  "output": {
+    "namespaces": ["local"],
+    "keys": [
+        "reversed.?"
+    ],
+    "bindings": [
+        "{message.text}"
+    ]
+  }
+}

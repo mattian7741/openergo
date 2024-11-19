@@ -1,0 +1,6 @@
+// Component Diagram
+digraph {
+	graph [bgcolor="#EEEEEE" nodesep=5 pad=1 rankdir=TB]
+	edge [color="#888888"]
+	node [fontcolor="#222222" fontname=courier fontsize=30]
+}

@@ -1,0 +1,26 @@
+{
+  "version": "0.0.1",
+  "name": "quoter",
+  "shell": {
+    "language": "python",
+    "procedure": "urllib.parse.quote"
+  },
+  "input": {
+    "namespaces": ["openergo"],
+    "keys": [
+        "text"
+    ],
+    "bindings": [
+        "{message.text}"
+    ]
+  },
+  "output": {
+    "namespaces": ["local"],
+    "keys": [
+        "quoted.?"
+    ],
+    "bindings": [
+        "{message.text}"
+    ]
+  }
+}

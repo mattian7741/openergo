@@ -1,0 +1,26 @@
+{
+  "version": "0.0.1",
+  "name": "snakecaser",
+  "shell": {
+    "language": "python",
+    "procedure": "snakecase.__main__.snake_case"
+  },
+  "input": {
+    "namespaces": ["openergo"],
+    "keys": [
+        "text"
+    ],
+    "bindings": [
+        "{message.text}"
+    ]
+  },
+  "output": {
+    "namespaces": ["local"],
+    "keys": [
+        "snaked.?"
+    ],
+    "bindings": [
+        "{message.text}"
+    ]
+  }
+}
