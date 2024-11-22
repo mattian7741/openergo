@@ -68,7 +68,8 @@ class Edge(Node):
 
 
 def add_configs(configs: List[Dict[str, Any]], folder: str) -> None:
-    config_files: List[str] = glob.glob(os.path.join(folder, "**/*.json"), recursive=True)
+    config_files: List[str] = glob.glob(
+        os.path.join(folder, "**/*.json"), recursive=True)
 
     for config_file in config_files:
         with open(config_file, "r", encoding="utf8") as stream:
@@ -94,14 +95,18 @@ def do_graph(keys: List[str], folders: List[str]) -> None:
             build_graph(Edge(key), config, cfgs)
 
 
-def build_graph(out_edge: Edge, cfg: Dict[str, Any], cfgs: List[Dict[str, Any]]) -> None:
+def build_graph(
+        out_edge: Edge, cfg: Dict[str, Any], cfgs: List[Dict[str, Any]]) -> None:
     out_key: str = str(out_edge)
     get_key: Callable[[str], Any] = lambda key: Utility.deep_get(cfg, key)
 
     for input_keys in get_key("input.keys"):
-        input_keys_parts: List[str] = [part for part in input_keys.split(".") if part]
-        negated_keys: set[str] = {part[1:] for part in input_keys_parts if part.startswith("~")}
-        required_keys: set[str] = {part for part in input_keys_parts if not part.startswith("~")}
+        input_keys_parts: List[str] = [
+            part for part in input_keys.split(".") if part]
+        negated_keys: set[str] = {part[1:]
+                                  for part in input_keys_parts if part.startswith("~")}
+        required_keys: set[str] = {
+            part for part in input_keys_parts if not part.startswith("~")}
         out_key_parts: set[str] = set(out_key.split("."))
 
         if required_keys <= out_key_parts and not negated_keys & out_key_parts:
@@ -112,7 +117,12 @@ def build_graph(out_edge: Edge, cfg: Dict[str, Any], cfgs: List[Dict[str, Any]])
             in_edge.add_node(component)
 
             for output_key in get_key("output.keys"):
-                do_substitution(input_keys, output_key, out_key, cfgs, component)
+                do_substitution(
+                    input_keys,
+                    output_key,
+                    out_key,
+                    cfgs,
+                    component)
 
 
 def do_substitution(

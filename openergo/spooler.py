@@ -15,9 +15,13 @@ class Spooler:
     def __init__(self, folder_path: str) -> None:
         self.folder_path = os.path.abspath(folder_path)
         self.project_name = os.path.basename(self.folder_path)
-        self.spool_dir = os.path.join(os.path.dirname(self.folder_path), ".spool")
-        self.project_spool_path = os.path.join(self.spool_dir, self.project_name)
-        self.package_dir = os.path.join(self.project_spool_path, self.project_name)
+        self.spool_dir = os.path.join(
+            os.path.dirname(
+                self.folder_path), ".spool")
+        self.project_spool_path = os.path.join(
+            self.spool_dir, self.project_name)
+        self.package_dir = os.path.join(
+            self.project_spool_path, self.project_name)
         self.requirements_txt = []
 
     def setup_project_structure(self) -> None:
@@ -26,7 +30,8 @@ class Spooler:
         shutil.copytree(
             self.folder_path,
             self.package_dir,
-            ignore=shutil.ignore_patterns("*.toml", "*.md", "*.txt", "__pycache__"),
+            ignore=shutil.ignore_patterns(
+                "*.toml", "*.md", "*.txt", "__pycache__"),
             dirs_exist_ok=True,
         )
         # Add this line to ensure the package has an __init__.py
@@ -37,16 +42,19 @@ class Spooler:
 
     def load_requirements(self) -> None:
         # Read and store dependencies from requirements.txt if it exists
-        requirements_path: str = os.path.join(self.folder_path, "requirements.txt")
+        requirements_path: str = os.path.join(
+            self.folder_path, "requirements.txt")
         if os.path.exists(requirements_path):
             with open(requirements_path, "r", encoding="utf-8") as f:
-                self.requirements_txt = [line.strip() for line in f if line.strip()]
+                self.requirements_txt = [line.strip()
+                                         for line in f if line.strip()]
 
     def create_setup_file(self) -> None:
         # Check if a setup.py already exists in the original folder; if so,
         # copy it over
         existing_setup_path: str = os.path.join(self.folder_path, "setup.py")
-        setup_file_path: str = os.path.join(self.project_spool_path, "setup.py")
+        setup_file_path: str = os.path.join(
+            self.project_spool_path, "setup.py")
 
         if os.path.exists(existing_setup_path):
             print(
@@ -103,8 +111,11 @@ setup(
 
 
 def main() -> None:
-    parser: argparse.ArgumentParser = argparse.ArgumentParser(description="Spool: Make a Python project installable.")
-    parser.add_argument("folder_path", help="Folder containing a Python script and optional requirements.txt")
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
+        description="Spool: Make a Python project installable.")
+    parser.add_argument(
+        "folder_path",
+        help="Folder containing a Python script and optional requirements.txt")
     args: argparse.Namespace = parser.parse_args()
 
     Spooler(args.folder_path).spool()

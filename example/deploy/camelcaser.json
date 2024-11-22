@@ -11,7 +11,9 @@
         "text"
     ],
     "bindings": {
-        "string": "test {name} test"
+        "string": "{input} test {input.payload.text} {input.payload.{input.payload.text}} test",
+        "dictionary": "{input}",
+        "integer": "{input.payload.number}"
     }
   },
   "output": {
@@ -20,7 +22,7 @@
         "cameled.?"
     ],
     "bindings": [
-        "{message.text}"
+        "{output}"
     ]
   }
 }

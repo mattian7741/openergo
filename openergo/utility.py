@@ -7,53 +7,82 @@ import uuid as uuid_lib
 from datetime import datetime, timezone
 from functools import wraps
 from io import StringIO
-from typing import (Any, Callable, Dict, Generator, Iterator, List, Optional,
-                    Tuple, Type, Union, cast, get_origin)
-
+from typing import (Any, Generator, Callable, Dict, Generator, Iterator, List, Optional,
+                    Tuple, Type, Union, cast, get_origin, TypeVar)
 import dill
 import pydash
 from cryptography.fernet import Fernet
+import binascii
+import copy
+import inspect
+
+
+F = TypeVar("F", bound=Callable[..., Any])
+T = TypeVar("T")
 
 _NO_VALUE: object = object()
 
+def traverse_datastructures(func: Callable[..., Any]) -> Callable[..., Any]:
+
+    @wraps(func)
+    def wrapper(data: Union[str, int, float, bool, dict, list, tuple], *args: Any, **kwargs: Any) -> Any:
+        if isinstance(data, list) or isinstance(data, tuple):
+            return [wrapper(item, *args, **kwargs) for item in data]
+        
+        if isinstance(data, dict):
+            return {key: wrapper(value, *args, **kwargs) for key, value in data.items()}
+        
+        return func(data, *args, **kwargs)
+        
+    return wrapper
+
+# def root_node(func: F) -> F:
+
+#     @wraps(func)
+#     def wrapper(data: Any, *args, **kwargs) -> Any:
+#         print(f"\nthe function is {str(func)}")
+#         processed = func({"__root__": data}, *args, **kwargs)
+#         print(f"\nroot_node:  Processed = {str(processed)}")
+#         if len(processed) != 1:
+#             raise RuntimeError("Unexpected mutation: multiple root keys found.")
+
+#         return processed[next(iter(processed))]
+#     return cast(F, wrapper)
 
 class Utility:
     @staticmethod
-    def traverse_datastructures(func: Callable[..., Any]) -> Callable[..., Any]:
-        """
-        Traverses data structures (dict, list, tuple) to apply a function to their elements.
-        """
-
-        @wraps(func)
-        def wrapper(value: Any, *args: Tuple[Any, ...]) -> Any:
-            handlers: Dict[type, Callable[[Any], Any]] = {
-                dict: lambda _dict, *args: {wrapper(key, *args): wrapper(val, *args) for key, val in _dict.items()},
-                list: lambda _list, *args: [wrapper(item, *args) for item in _list],
-                tuple: lambda _tuple, *args: tuple(wrapper(item, *args) for item in _tuple),
-            }
-            return handlers.get(type(value), func)(value, *args)
-
-        return wrapper
+    def generatorize(func: Callable[..., T]) -> Callable[..., Generator[T, None, None]]:
+        def generator_function(*args: Any, **kwargs: Any) -> Generator[T, None, None]:
+            result: Any = func(*args, **kwargs)
+            return result if inspect.isgenerator(result) else (elem for elem in [result])
+        return generator_function
 
     @staticmethod
-    def root_node(func: Callable[..., Any]) -> Callable[..., Any]:
-        @wraps(func)
-        def wrapper(value: Any, key: str, *args: Any) -> Any:
-            if key == "":
-                return value
-            result: Any = func({"__root__": value}, f"__root__.{key}", *args)
-            return result.get("__root__", result) if isinstance(result, dict) else result
+    def deep_copy(obj: Any) -> Any:
+        """
+        Creates a deep copy of the given object using pydash.deepcopy.
 
-        return wrapper
+        Args:
+            obj (Any): The object to deep copy.
+
+        Returns:
+            Any: A deep copy of the input object.
+        """
+        return copy.deepcopy(obj)
 
     @staticmethod
     def deep_get(data: Any, key: str, default_sentinel: Any = _NO_VALUE) -> Any:
+        if not key:
+            return data
         if not pydash.has(data, key) and default_sentinel is _NO_VALUE:
-            raise KeyError(f"Key '{key}' not found in the provided data.")
+            x = f"Key '{key}' not found in the provided data {str(data)}"
+            raise KeyError(x)
         return pydash.get(data, key, default_sentinel)
 
     @staticmethod
     def deep_set(data: Any, key: str, val: Any) -> Any:
+        if not key:
+            return val
         pydash.set_(data, key, val)
         return data
 
@@ -95,41 +124,67 @@ class Utility:
 
     @staticmethod
     def objectify(stringified: str) -> Union[List[Any], Dict[str, Any], None]:
-        return cast(Union[List[Any], Dict[str, Any], None], json.loads(stringified))
+        return cast(Union[List[Any], Dict[str, Any], None],
+                    json.loads(stringified))
 
+    @traverse_datastructures
     @staticmethod
-    def serialize(obj: Any) -> Any:
-        return (
-            obj
-            if isinstance(obj, (type(None), bool, int, float, str))
-            else (obj.serialize() if hasattr(obj, "serialize") else base64.b64encode(dill.dumps(obj)).decode("utf-8"))
-        )
+    def serialize(obj: Any, key: Optional[str] = None) -> Any:
+        if type(obj) in [None, bool, int, float, str]:
+            return cast(Union[None, bool, int, float, str], obj)
+        try:
+            return obj.serialize()
+        except AttributeError:
+            pass
+        serialized: bytes = dill.dumps(obj)
+        encoded: bytes = base64.b64encode(serialized)
+        utfdecoded: str = encoded.decode("utf-8")
+        return utfdecoded
 
+    @traverse_datastructures
     @staticmethod
-    def deserialize(serialized: str) -> Any:
-        return (
-            serialized
-            if not serialized
-            else (
-                dill.loads(base64.b64decode(serialized.encode("utf-8"))) if isinstance(serialized, str) else serialized
-            )
-        )
+    def deserialize(serialized: str, key: Optional[str] = None) -> Any:
+        if not serialized:
+            return serialized
+        try:
+            utfencoded: bytes = serialized.encode("utf-8")
+            decoded: bytes = base64.b64decode(utfencoded)
+            deserialized: Any = dill.loads(decoded)
+            return deserialized
+        except (binascii.Error, dill.UnpicklingError, AttributeError, MemoryError):
+            return serialized
 
     @staticmethod
     def compress(data: Any) -> str:
-        return base64.b64encode(lzma.compress(json.dumps(data).encode("utf-8"))).decode("utf-8")
+        return base64.b64encode(lzma.compress(
+            json.dumps(data).encode("utf-8"))).decode("utf-8")
 
     @staticmethod
     def uncompress(data: str) -> Any:
-        return json.loads(lzma.decompress(base64.b64decode(data)).decode("utf-8"))
+        return json.loads(lzma.decompress(
+            base64.b64decode(data)).decode("utf-8"))
 
     @staticmethod
-    def encrypt(data: Any, encryptkey: str) -> str:
-        return Fernet(encryptkey.encode("utf-8")).encrypt(str(data).encode("utf-8")).decode("utf-8")
+    def encryption_key():
+        return Fernet.generate_key().decode("utf-8")
 
     @staticmethod
-    def decrypt(encrypted_data: str, encryptkey: str) -> str:
-        return Fernet(encryptkey.encode("utf-8")).decrypt(encrypted_data.encode("utf-8")).decode("utf-8")
+    def encrypt(data: Any, key: str, encryptkey: str) -> Any:
+        key_bytes = encryptkey.encode("utf-8")
+        data_bytes = Utility.stringify(Utility.deep_get(data, key)).encode("utf-8")
+        encrypted_bytes = Fernet(key_bytes).encrypt(data_bytes)
+        encrypted = encrypted_bytes.decode("utf-8")
+        Utility.deep_set(data, key, encrypted)
+        return data
+
+    @staticmethod
+    def decrypt(encrypted_data: Any, key: str, encryptkey: str) -> Any:
+        key_bytes = encryptkey.encode("utf-8")
+        encrypted_bytes = Utility.deep_get(encrypted_data, key).encode("utf-8")
+        decrypted_bytes = Fernet(key_bytes).decrypt(encrypted_bytes)
+        decrypted = decrypted_bytes.decode("utf-8")
+        Utility.deep_set(encrypted_data, key, Utility.objectify(decrypted))
+        return encrypted_data
 
     @staticmethod
     def is_array(obj: Any) -> bool:
@@ -137,7 +192,8 @@ class Utility:
 
     @staticmethod
     def safecast(expected_type: Type[Any], provided_value: Any) -> Any:
-        value_type: Optional[Type[Any]] = get_origin(expected_type) or expected_type
+        value_type: Optional[Type[Any]] = get_origin(
+            expected_type) or expected_type
         primitive_types: List[Type[Any]] = [
             int,
             float,
@@ -154,32 +210,28 @@ class Utility:
             frozenset,
             dict,
         ]
-
         if value_type in primitive_types:
             if value_type == tuple:
                 return Utility._cast_to_tuple(provided_value)
-
             if value_type == bytes:
                 return Utility._cast_to_bytes(provided_value)
-
             if value_type == bool:
                 return Utility._cast_to_bool(provided_value)
-
             return Utility._cast_to_primitive(value_type, provided_value)
-
         if not callable(value_type) or value_type not in primitive_types:
             raise TypeError(
                 f"Cannot cast {
                     provided_value!r} to unsupported type {expected_type}"
             )
-
         # Safely return without using cast, since it's not valid here.
         return provided_value
 
     @staticmethod
     def _cast_to_tuple(provided_value: Any) -> Any:
-        if not isinstance(provided_value, (tuple, list, set, frozenset, range, dict)):
-            raise TypeError(f"Cannot cast non-iterable {provided_value!r} to tuple")
+        if not isinstance(provided_value, (tuple, list,
+                          set, frozenset, range, dict)):
+            raise TypeError(
+                f"Cannot cast non-iterable {provided_value!r} to tuple")
         return tuple(provided_value)
 
     @staticmethod
@@ -197,8 +249,10 @@ class Utility:
         if isinstance(provided_value, int):
             if provided_value in [0, 1]:
                 return bool(provided_value)
-            raise TypeError(f"Cannot cast non-boolean-like value {provided_value!r} to bool")
-        raise TypeError(f"Cannot cast non-boolean-like value {provided_value!r} to bool")
+            raise TypeError(
+                f"Cannot cast non-boolean-like value {provided_value!r} to bool")
+        raise TypeError(
+            f"Cannot cast non-boolean-like value {provided_value!r} to bool")
 
     @staticmethod
     def _cast_str_to_bool(provided_str: str) -> bool:
@@ -207,7 +261,8 @@ class Utility:
             return True
         if provided_str in ("false", ""):
             return False
-        raise TypeError(f"Cannot cast non-boolean-like value {provided_str!r} to bool")
+        raise TypeError(
+            f"Cannot cast non-boolean-like value {provided_str!r} to bool")
 
     @staticmethod
     def _cast_to_primitive(value_type: Type[Any], provided_value: Any) -> Any:
@@ -224,7 +279,8 @@ class Utility:
         return Utility.json_stream_to_object(StringIO(plaintext))
 
     @staticmethod
-    def json_stream_to_object(input_stream: StringIO) -> Generator[Any, None, None]:
+    def json_stream_to_object(
+            input_stream: StringIO) -> Generator[Any, None, None]:
         buffer: str = ""
         depth: int = 0
         in_string: bool = False

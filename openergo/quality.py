@@ -12,20 +12,25 @@ def quality_check(mod: str = "./openergo", fail_fast: bool = True) -> None:
         fail_fast: If True, stop on the first failure. If False, continue running all checks even if they fail.
     """
     steps: List[Tuple[str, str]] = [
-        (f"autopep8 --in-place --aggressive --recursive {mod}", "Formatting code (autopep8)"),
+        (
+            f"autopep8 --in-place --aggressive --recursive {mod}",
+            "Formatting code (autopep8)"),
         (f"black -S --line-length 120 {mod}", "Formatting code (black)"),
         (f"isort {mod}", "Sorting imports (isort)"),
         (
             f"mypy --strict --implicit-reexport --explicit-package-bases --ignore-missing-imports {mod}",
             "Type Checking (mypy)",
         ),
-        (f"flake8 --ignore=E501 {mod}", "Linting (flake8, ignoring line-too-long errors)"),
+        (f"flake8 --ignore=E501 {mod}",
+         "Linting (flake8, ignoring line-too-long errors)"),
         (
             f"pylint {mod} --disable=missing-docstring,empty-docstring,line-too-long,too-few-public-methods,too-many-public-methods",
             "Linting (pylint)",
         ),
-        (f"pytest --cov={mod} --cov-report=term-missing", "Running unit tests (pytest)"),
-        (f"radon cc {mod} -a -nc --min=B", "Complexity check (radon, enforcing A grade)"),
+        (f"pytest --cov={mod} --cov-report=term-missing",
+         "Running unit tests (pytest)"),
+        (f"radon cc {mod} -a -nc --min=B",
+         "Complexity check (radon, enforcing A grade)"),
     ]
 
     for command, description in steps:
